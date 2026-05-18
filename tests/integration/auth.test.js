@@ -13,7 +13,6 @@ const { pool } = require('../../src/config/database');
 afterAll(async () => {
   // Remove test users created during registration tests
   await pool.query(`DELETE FROM users WHERE email LIKE 'inttest-%'`);
-  await pool.end();
 });
 
 describe('POST /auth/register', () => {

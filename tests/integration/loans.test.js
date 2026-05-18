@@ -55,7 +55,6 @@ afterAll(async () => {
     SELECT id FROM users WHERE email LIKE 'loan-test-%'
   )`);
   await pool.query(`DELETE FROM users WHERE email LIKE 'loan-test-%'`);
-  await pool.end();
 });
 
 describe('POST /loans — create application', () => {

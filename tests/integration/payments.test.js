@@ -93,7 +93,6 @@ afterAll(async () => {
     SELECT id FROM users WHERE email LIKE 'pay-test-%'
   )`);
   await pool.query(`DELETE FROM users WHERE email LIKE 'pay-test-%'`);
-  await pool.end();
 });
 
 describe('POST /payments', () => {

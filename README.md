@@ -1,22 +1,31 @@
 # fintech-api-test-strategy
 
+[![CI](https://github.com/Djones-qa/fintech-api-test-strategy/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/Djones-qa/fintech-api-test-strategy/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Node.js](https://img.shields.io/badge/Node.js-20-green?logo=node.js)](https://nodejs.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?logo=postgresql)](https://www.postgresql.org)
+[![Pact](https://img.shields.io/badge/Contract%20Testing-Pact-purple)](https://pact.io)
+[![Stryker](https://img.shields.io/badge/Mutation%20Testing-Stryker-red)](https://stryker-mutator.io)
+[![k6](https://img.shields.io/badge/Performance-k6-7D64FF?logo=k6)](https://k6.io)
+[![PCI-DSS](https://img.shields.io/badge/Compliance-PCI--DSS%20v4.0-orange)](./docs/pci-dss-risk-mapping.md)
+
 A Node.js loan application and payment processing API that demonstrates a
 complete, production-grade test strategy in the PCI-DSS domain. Every gap
-from a typical "happy-path only" test suite is addressed here.
+from a typical "happy-path only" test suite is addressed here — and the
+methodology is intentionally transferable to any regulated domain.
+
+---
 
 ## What this repo demonstrates
 
-| Gap | Solution |
-|-----|----------|
+| Gap in most repos | Solution here |
+|---|---|
 | No authentication layer | JWT + RBAC (`src/middleware/auth.js`) |
 | No real database | PostgreSQL via Docker, migration-based schema |
 | No contract testing | Pact consumer + provider tests |
 | No mutation testing | Stryker targeting financial logic and encryption |
 | No CI performance gate | k6 smoke test — fails build if p95 > 500ms |
-| HIPAA risk mapping | Replaced with PCI-DSS v4.0 mapping (`docs/pci-dss-risk-mapping.md`) |
-
-The methodology is identical to a healthcare/HIPAA repo — only the domain
-and compliance framework change. That's the point.
+| HIPAA-only risk mapping | Replaced with PCI-DSS v4.0 traceability matrix |
 
 ---
 
@@ -55,6 +64,21 @@ tests/
 
 ---
 
+## CI Pipeline
+
+```
+lint → unit-tests + mutation → integration-tests → contract-tests
+                                                         ↓
+                                               performance-gate (k6 smoke)
+                                                         ↓
+                                               security-audit (npm audit)
+```
+
+The performance gate starts the real API against the test DB and runs the k6
+smoke script. Any threshold breach fails the build before the PR can merge.
+
+---
+
 ## Quick start
 
 ### Prerequisites
@@ -72,95 +96,77 @@ docker-compose up -d postgres
 
 ```bash
 cp .env.example .env
-# Edit .env — at minimum set JWT_SECRET and ENCRYPTION_KEY
+# Edit .env — set JWT_SECRET (long random string) and ENCRYPTION_KEY (64 hex chars)
 ```
 
-### 3. Install dependencies and run migrations
+### 3. Install, migrate, seed
 
 ```bash
 npm install
 npm run db:migrate
-npm run db:seed   # Creates demo users for each role
+npm run db:seed
 ```
 
 ### 4. Start the API
 
 ```bash
 npm run dev
+# API available at http://localhost:3000
 ```
-
-The API is now at `http://localhost:3000`.
 
 ---
 
 ## Running the test suite
 
-### Unit tests (no DB required)
 ```bash
+# Unit tests (no DB required)
 npm run test:unit
-```
 
-### Integration tests (requires Docker postgres)
-```bash
-# Ensure TEST_DATABASE_URL points at fintech_test_db
+# Integration tests (requires Docker postgres running)
 npm run test:integration
-```
 
-### All tests with coverage
-```bash
+# All tests with coverage report
 npm run coverage
-```
 
-### Mutation tests (Stryker)
-```bash
+# Mutation tests — proves tests actually catch bugs
 npm run test:mutation
 # Report: reports/mutation/mutation-report.html
-```
-Stryker mutates `loanDecision.js` and `encryption.js` and re-runs the unit
-tests. A mutation score below 75% fails the run. This proves your tests
-actually catch bugs — not just that they pass.
 
-### Contract tests (Pact)
-```bash
-# Consumer side — generates pacts/ directory
+# Pact consumer contract tests (generates pacts/ directory)
 npm run test:contract:consumer
 
-# Provider side — requires PAYMENT_PROCESSOR_URL env var
-PAYMENT_PROCESSOR_URL=http://sandbox.processor.example.com npm run test:contract:provider
-
-# Publish to Pact Broker (requires PACT_BROKER_URL)
-npm run test:contract:publish
-```
-
-### Performance smoke gate
-```bash
-# Start the API first, then:
+# k6 smoke performance gate
 npm run test:perf
-# Fails if p95 latency > 500ms or error rate > 1%
-```
-
-### Full load test
-```bash
-npm run test:perf:load
 ```
 
 ---
 
 ## RBAC roles
 
-| Role | Can do |
-|------|--------|
+| Role | Permissions |
+|---|---|
 | `applicant` | Create and submit their own loan applications |
 | `loan_officer` | View all loans, create payments |
-| `underwriter` | View all loans, run the decision engine |
+| `underwriter` | View all loans, run the automated decision engine |
 | `admin` | All of the above + update payment status |
+
+---
+
+## Seed users (after `npm run db:seed`)
+
+| Email | Role | Password |
+|---|---|---|
+| applicant@example.com | applicant | Str0ng!Password#99 |
+| officer@example.com | loan_officer | Str0ng!Password#99 |
+| underwriter@example.com | underwriter | Str0ng!Password#99 |
+| admin@example.com | admin | Str0ng!Password#99 |
 
 ---
 
 ## PCI-DSS compliance notes
 
 See [`docs/pci-dss-risk-mapping.md`](docs/pci-dss-risk-mapping.md) for the
-full requirement-to-test traceability matrix.
+full requirement-to-test traceability matrix covering Requirements 3, 6, 7, 8, 10, and 11.
 
 Key design decisions:
 - **No full PANs stored** — only `card_last_four` (4 digits) + processor token
@@ -173,27 +179,14 @@ Key design decisions:
 
 ---
 
-## CI pipeline
+## Author
 
-```
-lint → unit-tests + mutation → integration-tests → contract-tests
-                                                 ↓
-                                         performance-gate (k6 smoke)
-                                                 ↓
-                                         security-audit (npm audit)
-```
-
-The performance gate runs after integration tests pass. It starts the real
-API against the test DB and runs the k6 smoke script. Any threshold breach
-fails the build before the PR can merge.
+**Darrius Jones**
+[![GitHub](https://img.shields.io/badge/GitHub-Djones--qa-181717?logo=github)](https://github.com/Djones-qa)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Darrius%20Jones-0A66C2?logo=linkedin)](https://www.linkedin.com/in/darrius-jones-28226b350/)
 
 ---
 
-## Seed users (after `npm run db:seed`)
+## License
 
-| Email | Role | Password |
-|-------|------|----------|
-| applicant@example.com | applicant | Str0ng!Password#99 |
-| officer@example.com | loan_officer | Str0ng!Password#99 |
-| underwriter@example.com | underwriter | Str0ng!Password#99 |
-| admin@example.com | admin | Str0ng!Password#99 |
+[MIT](./LICENSE) © 2026 Darrius Jones

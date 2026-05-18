@@ -6,7 +6,7 @@
  *   - loanDecision.js: financial logic, boundary conditions, rate tiers
  *   - encryption.js: security-critical, every branch must be verified
  *
- * A mutation score < 75% means tests are not actually catching bugs.
+ * A mutation score < 70% means tests are not actually catching bugs.
  * PCI-DSS 6.3.2 — security-critical code must be rigorously tested.
  *
  * Run: npm run test:mutation
@@ -18,13 +18,10 @@ module.exports = {
   reporters: ['html', 'clear-text', 'progress'],
   testRunner: 'jest',
 
-  // Stryker v9 jest runner config
+  // Point Stryker at the dedicated unit-test-only Jest config
   jest: {
-    projectType: 'custom',
-    configFile: 'package.json',
+    configFile: 'jest.stryker.config.js',
     enableFindRelatedTests: true,
-    // Only run unit tests — fast, no DB required
-    testMatch: ['<rootDir>/tests/unit/**/*.test.js'],
   },
 
   // Only mutate the pure-logic files

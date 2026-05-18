@@ -1,0 +1,8 @@
+node_modules/
+coverage/
+reports/
+pacts/
+.env
+*.log
+dist/
+.stryker-tmp/

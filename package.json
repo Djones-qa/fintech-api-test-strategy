@@ -1,0 +1,65 @@
+{
+  "name": "fintech-api-test-strategy",
+  "version": "1.0.0",
+  "description": "Loan application & payment processing API — full test strategy demo (JWT/RBAC, PostgreSQL, Pact, Stryker, k6)",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "jest --runInBand --forceExit",
+    "test:unit": "jest --testPathPattern=tests/unit --runInBand --forceExit",
+    "test:integration": "jest --testPathPattern=tests/integration --runInBand --forceExit",
+    "test:contract:publish": "node tests/contract/publish.js",
+    "test:contract:consumer": "jest --testPathPattern=tests/contract/consumer --runInBand --forceExit",
+    "test:contract:provider": "jest --testPathPattern=tests/contract/provider --runInBand --forceExit",
+    "test:mutation": "stryker run",
+    "test:perf": "k6 run tests/performance/smoke.js",
+    "test:perf:load": "k6 run tests/performance/load.js",
+    "db:migrate": "node-pg-migrate up",
+    "db:migrate:down": "node-pg-migrate down",
+    "db:seed": "node scripts/seed.js",
+    "lint": "eslint src tests --ext .js",
+    "coverage": "jest --coverage --runInBand --forceExit"
+  },
+  "dependencies": {
+    "bcryptjs": "2.4.3",
+    "cors": "2.8.5",
+    "dotenv": "16.4.5",
+    "express": "4.19.2",
+    "express-rate-limit": "7.3.1",
+    "express-validator": "7.1.0",
+    "helmet": "7.1.0",
+    "jsonwebtoken": "9.0.2",
+    "pg": "8.12.0",
+    "uuid": "10.0.0",
+    "winston": "3.13.0"
+  },
+  "devDependencies": {
+    "@pact-foundation/pact": "12.5.0",
+    "@pact-foundation/pact-node": "10.18.0",
+    "@stryker-mutator/core": "8.2.6",
+    "@stryker-mutator/jest-runner": "8.2.6",
+    "eslint": "8.57.0",
+    "jest": "29.7.0",
+    "nodemon": "3.1.4",
+    "supertest": "7.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "coverageDirectory": "coverage",
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/server.js"
+    ],
+    "coverageThresholds": {
+      "global": {
+        "branches": 80,
+        "functions": 85,
+        "lines": 85,
+        "statements": 85
+      }
+    },
+    "testTimeout": 30000,
+    "testPathIgnorePatterns": ["/node_modules/", "/tests/performance/"]
+  }
+}

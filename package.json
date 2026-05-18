@@ -51,7 +51,7 @@
       "src/**/*.js",
       "!src/server.js"
     ],
-    "coverageThresholds": {
+    "coverageThreshold": {
       "global": {
         "branches": 80,
         "functions": 85,

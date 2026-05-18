@@ -23,7 +23,7 @@ const registerRules = [
     .withMessage('Password must contain a special character'),
   body('role')
     .optional()
-    .isIn(['applicant', 'loan_officer', 'underwriter'])
+    .isIn(['applicant', 'loan_officer', 'underwriter', 'admin'])
     .withMessage('Invalid role'),
 ];
 

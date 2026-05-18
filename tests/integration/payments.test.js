@@ -14,14 +14,20 @@ let approvedLoanId;
 beforeAll(async () => {
   const register = async (role) => {
     const email = `pay-test-${role}-${Date.now()}@example.com`;
-    await request(app).post('/auth/register').send({
+    const regRes = await request(app).post('/auth/register').send({
       email,
       password: 'Str0ng!Password#99',
       role,
     });
+    if (regRes.status !== 201) {
+      throw new Error(`Register failed for role '${role}': ${JSON.stringify(regRes.body)}`);
+    }
     const loginRes = await request(app)
       .post('/auth/login')
       .send({ email, password: 'Str0ng!Password#99' });
+    if (loginRes.status !== 200) {
+      throw new Error(`Login failed for role '${role}': ${JSON.stringify(loginRes.body)}`);
+    }
     return loginRes.body.token;
   };
 
@@ -39,28 +45,40 @@ beforeAll(async () => {
       term_months: 36,
       annual_income: 60000,
     });
+  if (createRes.status !== 201) {
+    throw new Error(`Loan creation failed in payments setup: ${JSON.stringify(createRes.body)}`);
+  }
 
   const loanId = createRes.body.loan.id;
 
-  await request(app)
+  const submitRes = await request(app)
     .post(`/loans/${loanId}/submit`)
     .set('Authorization', `Bearer ${applicantToken}`);
+  if (submitRes.status !== 200) {
+    throw new Error(`Loan submit failed in payments setup: ${JSON.stringify(submitRes.body)}`);
+  }
 
   // Get underwriter token to approve
   const uwEmail = `pay-test-underwriter-${Date.now()}@example.com`;
-  await request(app).post('/auth/register').send({
+  const uwRegRes = await request(app).post('/auth/register').send({
     email: uwEmail,
     password: 'Str0ng!Password#99',
     role: 'underwriter',
   });
+  if (uwRegRes.status !== 201) {
+    throw new Error(`Underwriter register failed: ${JSON.stringify(uwRegRes.body)}`);
+  }
   const uwLogin = await request(app)
     .post('/auth/login')
     .send({ email: uwEmail, password: 'Str0ng!Password#99' });
 
-  await request(app)
+  const decideRes = await request(app)
     .post(`/loans/${loanId}/decide`)
     .set('Authorization', `Bearer ${uwLogin.body.token}`)
     .send({ credit_score: 720 });
+  if (decideRes.status !== 200) {
+    throw new Error(`Loan decision failed in payments setup: ${JSON.stringify(decideRes.body)}`);
+  }
 
   approvedLoanId = loanId;
 });

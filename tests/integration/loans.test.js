@@ -22,9 +22,15 @@ beforeAll(async () => {
       password: 'Str0ng!Password#99',
       role,
     });
+    if (res.status !== 201) {
+      throw new Error(`Register failed for role '${role}': ${JSON.stringify(res.body)}`);
+    }
     const loginRes = await request(app)
       .post('/auth/login')
       .send({ email, password: 'Str0ng!Password#99' });
+    if (loginRes.status !== 200) {
+      throw new Error(`Login failed for role '${role}': ${JSON.stringify(loginRes.body)}`);
+    }
     return { id: res.body.user.id, token: loginRes.body.token };
   };
 

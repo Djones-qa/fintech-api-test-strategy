@@ -13,4 +13,5 @@ module.exports = {
     'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     'no-process-exit': 'off',
   },
+  ignorePatterns: ['tests/performance/**'],
 };

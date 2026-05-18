@@ -7,7 +7,6 @@
 const {
   decideLoan,
   CREDIT_SCORE_MINIMUM,
-  MAX_DTI,
   MAX_INCOME_MULTIPLE,
 } = require('../../src/utils/loanDecision');
 

@@ -1,5 +1,5 @@
 const express = require('express');
-const { body, param, query: queryValidator, validationResult } = require('express-validator');
+const { body, param, validationResult } = require('express-validator');
 const { query } = require('../config/database');
 const { authenticate, authorize } = require('../middleware/auth');
 const { auditMiddleware } = require('../middleware/auditLog');

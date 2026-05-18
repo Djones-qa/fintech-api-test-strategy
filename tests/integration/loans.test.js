@@ -7,11 +7,10 @@ require('dotenv').config({ path: '.env.test' });
 const request = require('supertest');
 const app = require('../../src/app');
 const { pool } = require('../../src/config/database');
-const { authHeader } = require('../helpers/auth');
 
 // Shared test user IDs — created once, reused across tests
-let applicantId, officerId, underwriterId, adminId;
-let applicantToken, officerToken, underwriterToken, adminToken;
+let applicantId;
+let applicantToken, officerToken, underwriterToken;
 
 beforeAll(async () => {
   // Register test users
@@ -37,17 +36,13 @@ beforeAll(async () => {
   const applicant = await register('applicant');
   const officer = await register('loan_officer');
   const underwriter = await register('underwriter');
-  const admin = await register('admin');
+  await register('admin'); // admin role needed for DB seeding; token unused here
 
   applicantId = applicant.id;
-  officerId = officer.id;
-  underwriterId = underwriter.id;
-  adminId = admin.id;
 
   applicantToken = applicant.token;
   officerToken = officer.token;
   underwriterToken = underwriter.token;
-  adminToken = admin.token;
 });
 
 afterAll(async () => {

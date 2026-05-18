@@ -33,7 +33,7 @@ exports.up = (pgm) => {
     currency: {
       type: 'char(3)',
       notNull: true,
-      default: "'USD'",
+      default: pgm.func("'USD'"),
     },
     status: {
       type: 'payment_status',

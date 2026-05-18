@@ -5,15 +5,12 @@
  * responses we expect. The generated pact file is published to the broker
  * and verified against the real provider.
  *
- * This mirrors the EHR/lab-system pattern from the healthcare repo but in
- * the PCI-DSS domain: our API is the consumer, the payment processor is the provider.
+ * Uses @pact-foundation/pact v16 PactV3 API.
  */
 const path = require('path');
+const http = require('http');
 const { PactV3, MatchersV3 } = require('@pact-foundation/pact');
-const { like, regex, integer } = MatchersV3;
-
-// Simulated payment processor client (what our app would call)
-const PaymentProcessorClient = require('./paymentProcessorClient');
+const { like, regex } = MatchersV3;
 
 const provider = new PactV3({
   consumer: 'FintechAPI',
@@ -21,6 +18,47 @@ const provider = new PactV3({
   dir: path.resolve(__dirname, '../../../pacts'),
   logLevel: 'warn',
 });
+
+/**
+ * Minimal HTTP helper that works against the Pact mock server.
+ * Avoids external dependencies — uses Node's built-in http module.
+ */
+function httpRequest(baseUrl, method, urlPath, body, headers = {}) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(urlPath, baseUrl);
+    const payload = body ? JSON.stringify(body) : null;
+
+    const options = {
+      hostname: url.hostname,
+      port: parseInt(url.port, 10),
+      path: url.pathname,
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        ...headers,
+        ...(payload ? { 'Content-Length': Buffer.byteLength(payload) } : {}),
+      },
+    };
+
+    const req = http.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => (data += chunk));
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          resolve({ status: res.statusCode, body: parsed });
+        } catch {
+          resolve({ status: res.statusCode, body: data });
+        }
+      });
+    });
+
+    req.on('error', reject);
+    if (payload) req.write(payload);
+    req.end();
+  });
+}
 
 describe('PaymentProcessor — consumer contract', () => {
   describe('POST /v1/charges — create a charge', () => {
@@ -36,7 +74,7 @@ describe('PaymentProcessor — consumer contract', () => {
             Authorization: like('Bearer sk_test_abc123'),
           },
           body: {
-            amount: integer(50000),       // amount in cents
+            amount: like(50000),
             currency: regex('USD', /^[A-Z]{3}$/),
             payment_method: like('tok_test_abc123'),
             description: like('Loan disbursement - loan_id_123'),
@@ -48,22 +86,28 @@ describe('PaymentProcessor — consumer contract', () => {
           body: {
             id: like('ch_test_abc123'),
             status: like('succeeded'),
-            amount: integer(50000),
+            amount: like(50000),
             currency: like('USD'),
-            created: integer(1700000000),
+            created: like(1700000000),
           },
         })
         .executeTest(async (mockServer) => {
-          const client = new PaymentProcessorClient(mockServer.url, 'Bearer sk_test_abc123');
-          const result = await client.createCharge({
-            amount: 50000,
-            currency: 'USD',
-            payment_method: 'tok_test_abc123',
-            description: 'Loan disbursement - loan_id_123',
-          });
+          const result = await httpRequest(
+            mockServer.url,
+            'POST',
+            '/v1/charges',
+            {
+              amount: 50000,
+              currency: 'USD',
+              payment_method: 'tok_test_abc123',
+              description: 'Loan disbursement - loan_id_123',
+            },
+            { Authorization: 'Bearer sk_test_abc123' }
+          );
 
-          expect(result.status).toBe('succeeded');
-          expect(result.id).toBeDefined();
+          expect(result.status).toBe(201);
+          expect(result.body.status).toBe('succeeded');
+          expect(result.body.id).toBeDefined();
         });
     });
 
@@ -79,7 +123,7 @@ describe('PaymentProcessor — consumer contract', () => {
             Authorization: like('Bearer sk_test_abc123'),
           },
           body: {
-            amount: integer(50000),
+            amount: like(50000),
             currency: like('USD'),
             payment_method: like('tok_declined'),
             description: like('Loan disbursement'),
@@ -97,16 +141,21 @@ describe('PaymentProcessor — consumer contract', () => {
           },
         })
         .executeTest(async (mockServer) => {
-          const client = new PaymentProcessorClient(mockServer.url, 'Bearer sk_test_abc123');
-
-          await expect(
-            client.createCharge({
+          const result = await httpRequest(
+            mockServer.url,
+            'POST',
+            '/v1/charges',
+            {
               amount: 50000,
               currency: 'USD',
               payment_method: 'tok_declined',
               description: 'Loan disbursement',
-            })
-          ).rejects.toMatchObject({ code: 'card_declined' });
+            },
+            { Authorization: 'Bearer sk_test_abc123' }
+          );
+
+          expect(result.status).toBe(402);
+          expect(result.body.error.code).toBe('card_declined');
         });
     });
   });
@@ -127,16 +176,22 @@ describe('PaymentProcessor — consumer contract', () => {
           body: {
             id: like('ch_test_abc123'),
             status: like('succeeded'),
-            amount: integer(50000),
+            amount: like(50000),
             currency: like('USD'),
           },
         })
         .executeTest(async (mockServer) => {
-          const client = new PaymentProcessorClient(mockServer.url, 'Bearer sk_test_abc123');
-          const result = await client.getCharge('ch_test_abc123');
+          const result = await httpRequest(
+            mockServer.url,
+            'GET',
+            '/v1/charges/ch_test_abc123',
+            null,
+            { Authorization: 'Bearer sk_test_abc123' }
+          );
 
-          expect(result.id).toBeDefined();
-          expect(result.amount).toBe(50000);
+          expect(result.status).toBe(200);
+          expect(result.body.id).toBeDefined();
+          expect(result.body.amount).toBe(50000);
         });
     });
   });

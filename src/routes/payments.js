@@ -146,14 +146,14 @@ router.patch(
     try {
       const result = await query(
         `UPDATE payments
-         SET status = $1,
+         SET status = $1::payment_status,
              processor_transaction_id = COALESCE($2, processor_transaction_id),
              failure_reason = $3,
-             processed_at = CASE WHEN $1::text IN ('completed','failed') THEN NOW() ELSE processed_at END,
+             processed_at = CASE WHEN $4 IN ('completed','failed') THEN NOW() ELSE processed_at END,
              updated_at = NOW()
-         WHERE id = $4
+         WHERE id = $5
          RETURNING id, status, processor_transaction_id, failure_reason, processed_at`,
-        [status, processor_transaction_id ?? null, failure_reason ?? null, req.params.id]
+        [status, processor_transaction_id ?? null, failure_reason ?? null, status, req.params.id]
       );
 
       if (result.rows.length === 0) {

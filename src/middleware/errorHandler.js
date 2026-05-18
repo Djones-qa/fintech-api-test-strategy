@@ -38,7 +38,6 @@ const errorHandler = (err, req, res, next) => {
       status >= 500 && process.env.NODE_ENV === 'production'
         ? 'An unexpected error occurred'
         : err.message,
-    ...(process.env.NODE_ENV === 'test' && err.code ? { pg_code: err.code, pg_detail: err.detail } : {}),
   };
 
   res.status(status).json(body);

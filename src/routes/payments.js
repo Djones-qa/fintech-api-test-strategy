@@ -149,7 +149,7 @@ router.patch(
          SET status = $1,
              processor_transaction_id = COALESCE($2, processor_transaction_id),
              failure_reason = $3,
-             processed_at = CASE WHEN $1 IN ('completed','failed') THEN NOW() ELSE processed_at END,
+             processed_at = CASE WHEN $1::text IN ('completed','failed') THEN NOW() ELSE processed_at END,
              updated_at = NOW()
          WHERE id = $4
          RETURNING id, status, processor_transaction_id, failure_reason, processed_at`,

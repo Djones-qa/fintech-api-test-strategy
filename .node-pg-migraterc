@@ -1,0 +1,5 @@
+{
+  "migrations-dir": "migrations",
+  "migrations-schema": "public",
+  "create-schema": true
+}

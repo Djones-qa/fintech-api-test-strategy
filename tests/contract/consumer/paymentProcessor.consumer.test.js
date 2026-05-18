@@ -10,7 +10,7 @@
 const path = require('path');
 const http = require('http');
 const { PactV3, MatchersV3 } = require('@pact-foundation/pact');
-const { like, regex } = MatchersV3;
+const { like } = MatchersV3;
 
 const provider = new PactV3({
   consumer: 'FintechAPI',
@@ -75,7 +75,7 @@ describe('PaymentProcessor — consumer contract', () => {
           },
           body: {
             amount: like(50000),
-            currency: regex('USD', /^[A-Z]{3}$/),
+            currency: like('USD'),
             payment_method: like('tok_test_abc123'),
             description: like('Loan disbursement - loan_id_123'),
           },

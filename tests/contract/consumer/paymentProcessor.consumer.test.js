@@ -10,7 +10,7 @@
  */
 const path = require('path');
 const { PactV3, MatchersV3 } = require('@pact-foundation/pact');
-const { like, regex, integer, decimal } = MatchersV3;
+const { like, regex, integer } = MatchersV3;
 
 // Simulated payment processor client (what our app would call)
 const PaymentProcessorClient = require('./paymentProcessorClient');

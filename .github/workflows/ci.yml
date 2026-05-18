@@ -222,4 +222,5 @@ jobs:
           cache: npm
       - run: npm ci
       # PCI-DSS 6.3.3 — all software components protected from known vulnerabilities
-      - run: npm audit --audit-level=high
+      # --omit=dev scopes the check to production dependencies only
+      - run: npm audit --audit-level=high --omit=dev

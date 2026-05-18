@@ -10,7 +10,7 @@
  * This demonstrates the "provider side" of contract testing — the methodology
  * is identical to verifying an EHR system honours a lab-results contract.
  */
-const { Verifier } = require('@pact-foundation/pact');
+const { VerifierV3 } = require('@pact-foundation/pact');
 const path = require('path');
 
 // Skip provider verification if no provider URL is configured
@@ -55,7 +55,7 @@ describeOrSkip('PaymentProcessor — provider verification', () => {
       logLevel: 'warn',
     };
 
-    const output = await new Verifier(opts).verifyProvider();
+    const output = await new VerifierV3(opts).verifyProvider();
     console.log('Pact verification output:', output);
   }, 60000);
 });

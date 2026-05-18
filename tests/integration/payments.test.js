@@ -194,6 +194,9 @@ describe('PATCH /payments/:id/status', () => {
         processor_transaction_id: 'txn_abc123',
       });
 
+    if (res.status !== 200) {
+      console.error('PATCH 200 test failed — response body:', JSON.stringify(res.body));
+    }
     expect(res.status).toBe(200);
     expect(res.body.payment.status).toBe('completed');
     expect(res.body.payment.processor_transaction_id).toBe('txn_abc123');

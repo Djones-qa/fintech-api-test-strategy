@@ -21,6 +21,9 @@ app.use(cors({ origin: process.env.ALLOWED_ORIGINS?.split(',') ?? '*' }));
 // ─── Body parsing ─────────────────────────────────────────────────────────────
 app.use(express.json({ limit: '10kb' })); // Limit body size (PCI-DSS 6.5)
 
+// ─── Health check (before rate limiter — must always respond) ────────────────
+app.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
+
 // ─── Rate limiting (PCI-DSS 6.5.4) ───────────────────────────────────────────
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS ?? '900000', 10),
@@ -36,9 +39,6 @@ app.use((req, _res, next) => {
   logger.info('Incoming request', { method: req.method, path: req.path, ip: req.ip });
   next();
 });
-
-// ─── Health check ─────────────────────────────────────────────────────────────
-app.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/auth', authRoutes);
